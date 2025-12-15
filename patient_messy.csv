@@ -1,0 +1,8 @@
+Patient_ID,Age,Gender,Fasting_Sugar,HbA1c,Risk_Status
+101,55,Male,140,7.2,High
+102,60,Female,110,,Normal
+103,,Male,250,9.5,Critical
+104,45,Female,90,5.4,Normal
+105,55,Male,140,7.2,High
+106,30,Male,100,5.1,Normal
+107,65,Female,High,8.0,High
