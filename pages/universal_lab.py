@@ -78,6 +78,35 @@ if st.button("Apply Treatment"):
 # 3. DISCHARGE PATIENT (Download)
 st.divider()
 st.subheader("💾 Discharge Patient")
+# --- 4. THE DETECTIVE (EDA Section) ---
+st.divider()
+st.header("🔍 Data Detective (EDA)")
+
+# Checkbox to open this section
+if st.checkbox("Show Visualization Options"):
+    
+    # VISUALIZATION 1: HISTOGRAM (Univariate)
+    st.subheader("1. Histogram (Distribution)")
+    # REPETITION: Using st.selectbox again!
+    hist_col = st.selectbox("Pick a column to see its shape:", df.columns)
+    
+    # We use a simple Streamlit bar chart for now
+    st.bar_chart(df[hist_col].value_counts())
+    
+    # VISUALIZATION 2: SCATTER PLOT (Bivariate)
+    st.subheader("2. Scatter Plot (Correlation)")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # REPETITION: Using selectbox for X axis
+        x_axis = st.selectbox("Pick X-Axis (Cause):", df.columns)
+    with col2:
+        # REPETITION: Using selectbox for Y axis
+        y_axis = st.selectbox("Pick Y-Axis (Effect):", df.columns)
+        
+    # The Chart
+    # We use a scatter chart (requires simple syntax)
+    st.scatter_chart(df, x=x_axis, y=y_axis)
 
 # Convert dataframe to CSV for download
 csv = df_clean.to_csv(index=False).encode('utf-8')
