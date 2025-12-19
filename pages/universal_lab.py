@@ -53,14 +53,24 @@ if uploaded_file:
             st.error(f"Error: {e}")
 
     # --- 4. THE DETECTIVE (EDA & Heatmap) ---
+        # --- 5. THE HEATMAP (Correlation X-Ray) ---
     st.divider()
-    st.header("🔍 Data Detective")
-    
-    if st.checkbox("Show Correlation Heatmap"):
+    st.header("🌡️ Correlation Heatmap")
+
+    if st.button("Generate Correlation Matrix"):
+        # 1. Triage: Only Numbers
         numeric_df = df_clean.select_dtypes(include=['number'])
+        
+        # 2. Test: Pearson Correlation
         corr = numeric_df.corr()
-        st.write("### 🌡️ Correlation X-Ray (Pearson r)")
-        st.dataframe(corr.style.background_gradient(cmap='coolwarm'))
+        
+        # 3. Visualizer: Heatmap with a "Clean" Mask
+        # This one line makes you look like a Pro:
+        import numpy as np
+        mask = np.triu(np.ones_like(corr, dtype=bool))
+        
+        st.write("### 🌡️ Clean Correlation Matrix")
+        st.dataframe(corr.mask(mask).style.background_gradient(cmap='coolwarm', axis=None))
         
     # --- 5. DISCHARGE (Download) ---
     st.divider()
