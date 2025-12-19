@@ -3,117 +3,67 @@ import pandas as pd
 
 st.set_page_config(page_title="Universal Lab", page_icon="🧪")
 
-st.title("🧪 The Universal Data Cleaner")
-st.markdown("Upload **ANY** CSV file. This tool will help you clean it without writing code.")
+st.title("🧪 The Universal Data Lab")
+st.markdown("Upload any medical CSV to Clean, Engineer, and Analyze.")
 
-# 1. THE UNIVERSAL UPLOADER
-# We don't say "pd.read_csv('patients.csv')" anymore.
-# We let the user pick the file.
-uploaded_file = st.file_uploader("Upload your messy CSV", type=["csv"])
+# --- 1. THE RECEPTIONIST (Uploader) ---
+uploaded_file = st.file_uploader("Upload Messy CSV", type=["csv"])
 
-if uploaded_file is None:
-    st.info("Waiting for file...")
-    st.stop()  # Stop here until file is uploaded
+if uploaded_file:
+    # Load the data into a 'Smart Object' (DataFrame)
+    df = pd.read_csv(uploaded_file)
+    df_clean = df.copy() # Make a copy so we don't ruin the original
 
-# Load the data
-df = pd.read_csv(uploaded_file)
-df_clean = df.copy()
+    st.write("### 📋 Patient Data Preview")
+    st.dataframe(df.head())
 
-st.write("### 1. Preview Data")
-st.dataframe(df.head())
-
-# Show current missing values
-st.write("### 2. Diagnosis (Missing Values)")
-st.write(df.isnull().sum())
-
-# 2. THE UNIVERSAL SURGERY
-st.divider()
-st.header("🔪 Surgical Station")
-
-# A. SELECT COLUMN (The Dropdown)
-# Since we don't know the column names, we ask Python to list them.
-target_col = st.selectbox("Which column do you want to fix?", df.columns)
-
-# B. CHOOSE METHOD
-method = st.radio("How should we fix it?", 
-                  ["Fill with Median (Numbers)", 
-                   "Fill with Mode (Text/Categories)", 
-                   "Drop Rows (Delete)"])
-
-# C. THE BUTTON
-if st.button("Apply Treatment"):
+    # --- 2. THE SURGICAL STATION (Cleaning) ---
+    st.divider()
+    st.header("🔪 Data Surgery")
     
-    # LOGIC 1: FILL MEDIAN
-    if method == "Fill with Median (Numbers)":
-        try:
-            # Force to number first (handling "High" etc)
+    col1, col2 = st.columns(2)
+    with col1:
+        target_col = st.selectbox("Select Column to Fix:", df.columns)
+    with col2:
+        method = st.radio("Treatment:", ["Median", "Mode", "Drop"])
+
+    if st.button("Apply Surgery"):
+        if method == "Median":
             df_clean[target_col] = pd.to_numeric(df_clean[target_col], errors='coerce')
-            median_val = df_clean[target_col].median()
-            df_clean[target_col] = df_clean[target_col].fillna(median_val)
-            st.success(f"Filled {target_col} with Median: {median_val}")
-        except:
-            st.error("Could not calculate median. Is this a text column?")
+            val = df_clean[target_col].median()
+            df_clean[target_col] = df_clean[target_col].fillna(val)
+        elif method == "Mode":
+            val = df_clean[target_col].mode()[0]
+            df_clean[target_col] = df_clean[target_col].fillna(val)
+        else:
+            df_clean = df_clean.dropna(subset=[target_col])
+        st.success(f"Fixed {target_col}!")
 
-    # LOGIC 2: FILL MODE (For Text like 'Gender')
-    elif method == "Fill with Mode (Text/Categories)":
-        mode_val = df_clean[target_col].mode()[0]
-        df_clean[target_col] = df_clean[target_col].fillna(mode_val)
-        st.success(f"Filled {target_col} with Mode: {mode_val}")
-
-    # LOGIC 3: DROP ROWS
-    elif method == "Drop Rows (Delete)":
-        df_clean = df_clean.dropna(subset=[target_col])
-        st.success(f"Dropped rows with missing {target_col}")
-
-    # SHOW RESULT
-    st.write("### 3. Post-Op Results")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.caption("Original Missing")
-        st.write(df[target_col].isnull().sum())
-    with col2:
-        st.caption("Remaining Missing")
-        st.write(df_clean[target_col].isnull().sum())
-
-# 3. DISCHARGE PATIENT (Download)
-st.divider()
-st.subheader("💾 Discharge Patient")
-# --- 4. THE DETECTIVE (EDA Section) ---
-st.divider()
-st.header("🔍 Data Detective (EDA)")
-
-# Checkbox to open this section
-if st.checkbox("Show Visualization Options"):
+    # --- 3. THE BRAIN STATION (Feature Engineering) ---
+    st.divider()
+    st.header("🧠 Medical Engineering")
+    new_col = st.text_input("New Column Name (e.g., BMI)")
+    formula = st.text_input("Formula (e.g., Weight / (Height ** 2))")
     
-    # VISUALIZATION 1: HISTOGRAM (Univariate)
-    st.subheader("1. Histogram (Distribution)")
-    # REPETITION: Using st.selectbox again!
-    hist_col = st.selectbox("Pick a column to see its shape:", df.columns)
+    if st.button("Create Feature"):
+        try:
+            df_clean[new_col] = df_clean.eval(formula)
+            st.success(f"Created {new_col}!")
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+    # --- 4. THE DETECTIVE (EDA & Heatmap) ---
+    st.divider()
+    st.header("🔍 Data Detective")
     
-    # We use a simple Streamlit bar chart for now
-    st.bar_chart(df[hist_col].value_counts())
-    
-    # VISUALIZATION 2: SCATTER PLOT (Bivariate)
-    st.subheader("2. Scatter Plot (Correlation)")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # REPETITION: Using selectbox for X axis
-        x_axis = st.selectbox("Pick X-Axis (Cause):", df.columns)
-    with col2:
-        # REPETITION: Using selectbox for Y axis
-        y_axis = st.selectbox("Pick Y-Axis (Effect):", df.columns)
+    if st.checkbox("Show Correlation Heatmap"):
+        numeric_df = df_clean.select_dtypes(include=['number'])
+        corr = numeric_df.corr()
+        st.write("### 🌡️ Correlation X-Ray (Pearson r)")
+        st.dataframe(corr.style.background_gradient(cmap='coolwarm'))
         
-    # The Chart
-    # We use a scatter chart (requires simple syntax)
-    st.scatter_chart(df, x=x_axis, y=y_axis)
-
-# Convert dataframe to CSV for download
-csv = df_clean.to_csv(index=False).encode('utf-8')
-
-st.download_button(
-    label="Download Clean CSV",
-    data=csv,
-    file_name="clean_data_export.csv",
-    mime="text/csv"
-)
+    # --- 5. DISCHARGE (Download) ---
+    st.divider()
+    csv = df_clean.to_csv(index=False).encode('utf-8')
+    st.download_button("💾 Download Cleaned Data", data=csv, file_name="cleaned_data.csv")
+    
